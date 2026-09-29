@@ -1,0 +1,273 @@
+import React, { useState } from 'react';
+import { Gift, Star, RefreshCcw, Sparkles, Coins, Package, Calculator } from 'lucide-react';
+
+const MEMBERS = [
+  { name: '아사카 카린', color: '#485EC6', text: 'text-white' },
+  { name: '우에하라 아유무', color: '#EE7D9F', text: 'text-white' },
+  { name: '미야시타 아이', color: '#FF6E20', text: 'text-white' },
+  { name: '오사카 시즈쿠', color: '#01B7ED', text: 'text-white' },
+  { name: '유키 세츠나', color: '#D81C2F', text: 'text-white' },
+  { name: '나카스 카스미', color: '#E7D600', text: 'text-gray-900' },
+  { name: '미후네 시오리코', color: '#39B184', text: 'text-white' },
+  { name: '코노에 카나타', color: '#A664A0', text: 'text-white' },
+  { name: '미아 테일러', color: '#E9E7EB', text: 'text-gray-900' },
+  { name: '엠마 베르데', color: '#84C36E', text: 'text-white' },
+  { name: '쇼우 란쥬', color: '#F69992', text: 'text-white' },
+  { name: '텐노지 리나', color: '#9CA5B9', text: 'text-white' },
+  { name: '타카사키 유우', color: '#2BA28B', text: 'text-white' }
+];
+
+export default function NijigasakiGacha() {
+  // 인벤토리 초기값 동적 생성 (A~D상 및 모든 멤버 카운트 0)
+  const getInitialInventory = () => {
+    const inv = { A: 0, B: 0, C: 0, D: 0 };
+    MEMBERS.forEach(m => inv[m.name] = 0);
+    return inv;
+  };
+
+  const [spentJpy, setSpentJpy] = useState(0);
+  const [pullsCount, setPullsCount] = useState(0);
+  const [inventory, setInventory] = useState(getInitialInventory());
+  const [currentRoll, setCurrentRoll] = useState([]);
+  const [isRolling, setIsRolling] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState(870); // 100엔당 원화
+
+  const handlePull = () => {
+    if (isRolling) return;
+    setIsRolling(true);
+    setCurrentRoll([]); 
+
+    setSpentJpy(prev => prev + 8000); // 10연 8,000엔
+    setPullsCount(prev => prev + 10);
+
+    setTimeout(() => {
+      let tempInventory = { ...inventory };
+      let rollResults = [];
+
+      for (let i = 0; i < 10; i++) {
+        const rand = Math.random() * 100;
+
+        // 확률: 누이 23.4%, A 10%, B 16.6%, C 20%, D 30%
+        if (rand < 23.4) {
+          // 누이 당첨 (중복 허용, 13명 중 무작위 1명)
+          const picked = MEMBERS[Math.floor(Math.random() * MEMBERS.length)];
+          tempInventory[picked.name] += 1;
+          rollResults.push({ type: 'Nui', member: picked, id: `roll-${i}-${Date.now()}` });
+        } else if (rand < 33.4) { // 23.4 + 10.0
+          tempInventory.A += 1;
+          rollResults.push({ type: 'A상', id: `roll-${i}-${Date.now()}` });
+        } else if (rand < 50.0) { // 33.4 + 16.6
+          tempInventory.B += 1;
+          rollResults.push({ type: 'B상', id: `roll-${i}-${Date.now()}` });
+        } else if (rand < 70.0) { // 50.0 + 20.0
+          tempInventory.C += 1;
+          rollResults.push({ type: 'C상', id: `roll-${i}-${Date.now()}` });
+        } else { // 70.0 ~ 100.0
+          tempInventory.D += 1;
+          rollResults.push({ type: 'D상', id: `roll-${i}-${Date.now()}` });
+        }
+      }
+
+      setInventory(tempInventory);
+      setCurrentRoll(rollResults);
+      
+      setTimeout(() => setIsRolling(false), 800); 
+    }, 50);
+  };
+
+  const handleReset = () => {
+    setSpentJpy(0);
+    setPullsCount(0);
+    setInventory(getInitialInventory());
+    setCurrentRoll([]);
+    setIsRolling(false);
+  };
+
+  const calculateKrw = (jpy) => {
+    if (isNaN(exchangeRate) || exchangeRate === 0) return 0;
+    return Math.floor((jpy / 100) * exchangeRate);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans pb-24 text-gray-800">
+      <style>{`
+        @keyframes popIn {
+          0% { transform: scale(0.5); opacity: 0; }
+          70% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+          opacity: 0;
+          animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+      `}</style>
+
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Header & Dashboard */}
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-6 flex flex-col md:flex-row justify-between items-center text-white gap-4">
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl md:text-3xl font-extrabold flex items-center justify-center md:justify-start gap-2">
+                니지동 누이 가챠 시뮬레이터 <Sparkles className="text-yellow-300" />
+              </h1>
+              <p className="mt-1 text-indigo-100 font-medium opacity-90 text-sm md:text-base">
+                10연 8,000엔 | 누이 23.4% (멤버당 약 1.8%)
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+              <div className="bg-black/20 p-2 px-3 rounded-lg backdrop-blur-sm flex items-center gap-2 text-sm border border-white/10">
+                <Calculator size={16} />
+                <span>100엔 =</span>
+                <input 
+                  type="number" 
+                  value={exchangeRate} 
+                  onChange={(e) => setExchangeRate(Number(e.target.value))}
+                  className="w-16 bg-white/10 border border-white/20 rounded px-1 py-0.5 text-white focus:outline-none focus:ring-1 focus:ring-white text-right font-mono"
+                />
+                <span>원</span>
+              </div>
+              <button 
+                onClick={handleReset}
+                className="p-3 bg-white/20 hover:bg-white/30 rounded-xl backdrop-blur-sm transition-all"
+                title="기록 초기화"
+              >
+                <RefreshCcw size={20} />
+              </button>
+            </div>
+          </div>
+
+          {}
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white">
+            <div className="flex flex-col p-5 bg-red-50 rounded-2xl border border-red-100 items-center sm:items-start text-center sm:text-left">
+              <span className="text-red-500 font-bold flex items-center gap-1 mb-2"><Coins size={20} /> 총 사용 금액</span>
+              <div className="flex flex-col items-center sm:items-start">
+                <span className="text-3xl md:text-4xl font-black text-red-700">
+                  {spentJpy.toLocaleString()} <span className="text-xl font-bold">엔</span>
+                </span>
+                <span className="text-lg font-bold text-red-400 mt-1">
+                  (약 {calculateKrw(spentJpy).toLocaleString()} 원)
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col p-5 bg-blue-50 rounded-2xl border border-blue-100 items-center justify-center">
+              <span className="text-blue-500 font-bold flex items-center gap-1 mb-2"><Package size={20} /> 총 뽑기 횟수</span>
+              <span className="text-4xl md:text-5xl font-black text-blue-700">{pullsCount} <span className="text-2xl font-bold">회</span></span>
+            </div>
+          </div>
+        </div>
+
+        {}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+            <button
+              onClick={handlePull}
+              disabled={isRolling}
+              className={`relative overflow-hidden w-full max-w-lg py-5 rounded-2xl text-2xl font-black text-white shadow-xl transition-all duration-200 
+                ${isRolling 
+                  ? 'bg-slate-400 scale-[0.98] cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 active:scale-[0.98]'
+                }`}
+            >
+              {isRolling ? '가챠 진행 중...' : '10연 뽑기 시작 (8,000엔)'}
+            </button>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 min-h-[300px]">
+            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <Sparkles className="text-indigo-500" size={20} /> 현재 뽑기 결과
+            </h2>
+            {currentRoll.length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-gray-400 font-medium bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                버튼을 눌러 뽑기를 시작하세요!
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                {currentRoll.map((roll, idx) => (
+                  <div 
+                    key={roll.id} 
+                    className={`animate-pop-in relative flex flex-col items-center justify-center p-4 h-32 rounded-2xl shadow-sm border-2
+                      ${roll.type === 'Nui' 
+                        ? 'border-transparent shadow-[0_4px_20px_rgba(0,0,0,0.1)]' 
+                        : 'bg-gray-50 border-gray-200'
+                      }`}
+                    style={{ 
+                      animationDelay: `${idx * 80}ms`,
+                      backgroundColor: roll.type === 'Nui' ? roll.member.color : undefined
+                    }}
+                  >
+                    {roll.type === 'Nui' ? (
+                      <>
+                        <Star className="text-yellow-300 fill-yellow-300 drop-shadow-md mb-2" size={32} />
+                        <span className={`text-sm font-black text-center leading-tight ${roll.member.text} drop-shadow-sm`}>
+                          {roll.member.name.split(' ').map((word, i) => <React.Fragment key={i}>{word}<br/></React.Fragment>)}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Gift className="text-gray-400 mb-2" size={32} />
+                        <span className="font-bold text-gray-600 text-lg">{roll.type}</span>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-4">획득 인벤토리</h2>
+          
+          <div className="space-y-8">
+            {/* 일반 상품 현황 */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">일반 상품 (A~D상)</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {['A', 'B', 'C', 'D'].map(grade => (
+                  <div key={grade} className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col items-center justify-center">
+                    <span className="font-bold text-gray-500 mb-1">{grade}상</span>
+                    <span className="text-2xl font-black text-gray-800">{inventory[grade]}<span className="text-base font-bold ml-1">개</span></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 누이 현황 */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">멤버 누이</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {MEMBERS.map(member => {
+                  const count = inventory[member.name];
+                  const isOwned = count > 0;
+                  return (
+                    <div 
+                      key={member.name} 
+                      className={`p-3 rounded-xl border-2 flex flex-col items-center justify-between transition-all min-h-[90px]
+                        ${isOwned ? 'border-transparent shadow-sm' : 'border-gray-100 bg-gray-50 opacity-60'}
+                      `}
+                      style={{ backgroundColor: isOwned ? member.color : undefined }}
+                    >
+                      <span className={`text-xs font-bold text-center leading-tight mb-2 ${isOwned ? member.text : 'text-gray-400'}`}>
+                        {member.name}
+                      </span>
+                      <div className={`px-3 py-1 rounded-full text-sm font-black
+                        ${isOwned ? 'bg-white/20 text-white backdrop-blur-sm' : 'bg-gray-200 text-gray-500'}
+                      `}>
+                        {count}개
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
